@@ -7,10 +7,8 @@
 #include <ctime>          //Time
 #include <stdlib.h>
 #include <stdio.h>
-//#include <vector>
 #include <sys/epoll.h>
 #include <fcntl.h>
-#include <sqlite3.h>
 #include <errno.h>
 
 #include <set>
@@ -64,7 +62,7 @@ void on_epollin(int epollfd, int fd, std::map <int, Client*>* clientList, std::s
 	do
 	{
 		ret = recv(client->fd, client->incoming_buf, sizeof(client->incoming_buf),0);
-		std::cout << "ret " << ret << "\n";
+		//std::cout << "ret " << ret << "\n";
 		
 	}while(errno != EAGAIN && ret > 0 && errno != EWOULDBLOCK);
 	
@@ -80,7 +78,7 @@ void on_epollin(int epollfd, int fd, std::map <int, Client*>* clientList, std::s
 		client->is_first_packet = false;
 	
 	
-	std::cout << "epollin\n";
+	//std::cout << "epollin\n";
 	
 	std::string uuid_packet;
 	uuid_packet.push_back(0x29);
@@ -122,7 +120,7 @@ void on_epollin(int epollfd, int fd, std::map <int, Client*>* clientList, std::s
 
 void on_epollout(int epollfd, int fd, std::map <int, Client*>* clientList)
 {
-	std::cout << "Epollout\n";
+	//std::cout << "Epollout\n";
 	auto it = clientList->find(fd);	
 	
 	if(it == clientList->end())
@@ -159,7 +157,7 @@ void on_epollout(int epollfd, int fd, std::map <int, Client*>* clientList)
 
 void on_epollerr(int epollfd, int fd, std::map <int, Client*>* clientList)
 {
-	std::cout << "Epollerr\n";
+	//std::cout << "Epollerr\n";
 	auto it = clientList->find(fd);	
 	
 	if(it == clientList->end())
@@ -191,20 +189,6 @@ void on_keepalive(int epollfd, Client* client)
 	client->outgoing_len += sizeof(world_time);
 
 	client->last_keep_alive = time(0);
-	
-	
-	
-	std::string chat_message = "{\"extra\":[\"Fallback\"], \"text\":\"\"}";
-	
-	std::string chat_packet;
-	chat_packet.push_back((uint8_t)chat_message.size()+4);
-	chat_packet.push_back(0x00);
-	chat_packet.push_back(0x0F);
-	chat_packet.push_back((uint8_t)chat_message.size());
-	chat_packet += chat_message;
-	
-	//memcpy(client->outgoing_buf + client->outgoing_len, chat_packet.c_str(), chat_packet.size());
-	//client->outgoing_len += chat_packet.size();
 	
 	epoll_event Eevent;
 	Eevent.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLERR | EPOLLET;
@@ -307,7 +291,7 @@ int main()
 					
 					clientList.insert(std::pair<int, Client*>((int)connection, (Client*)client));
 					
-					std::cout << "inserted\n";
+					//std::cout << "inserted\n";
 				}
 				
 			}
@@ -321,8 +305,6 @@ int main()
 				if (events[k].events & (EPOLLRDHUP | EPOLLHUP))
 				{
 					//printf("\033[01;33m[INFO]\033[0m Disconnect event\n");
-					
-					//ThreadPool.add(task);
 					on_epollerr(epollfd, events[k].data.fd, &clientList);
 					readAgain.erase(events[k].data.fd);
 					close(events[k].data.fd);
@@ -338,7 +320,6 @@ int main()
 				{
 					on_epollout(epollfd, events[k].data.fd, &clientList);
 					//printf("\033[01;33m[INFO]\033[0m EPOLLOUT event happened\n");
-					//ThreadPool.add(task);
 		       		}
 
 
@@ -357,13 +338,7 @@ int main()
 		
 		for(auto ReadEvent : readAgain)
 		{
-			//pool_task task;
-			//task.event = EPOLLIN;
-			//task.fd = ReadEvent;
-			printf("\033[01;33m[INFO]\033[0m ReadAgain event happened\n");
 			on_epollin(epollfd, ReadEvent, &clientList, &readAgain);
-			//ThreadPool.add(task);
-			
 		}
 		
 		
